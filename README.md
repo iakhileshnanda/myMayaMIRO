@@ -1,78 +1,75 @@
-<div align="center">
+# 🐟 Maya MIRO — Stock Sentiment Analysis using MiroFish + NVIDIA NIM
 
-<img src="./static/image/mirofish-offline-banner.png" alt="MiroFish Offline" width="100%"/>
+> Customized fork of MiroFish-Offline by Akhilesh Nanda  
+> Original: https://github.com/nikmcfly/MiroFish-Offline
 
-# Maya MIRO — Stock Sentiment Analysis using MiroFish + NVIDIA NIM
+---
 
-# MiroFish-Offline
+## 🧠 What is this?
 
-**Fully local fork of [MiroFish](https://github.com/666ghj/MiroFish) — now optimized for NVIDIA NIM stock sentiment analysis. English UI.**
+Maya MIRO is a stock sentiment analysis tool built on MiroFish — a multi-agent simulation engine. You upload any financial document (earnings report, news article, RBI policy draft, stock analysis) and it generates hundreds of AI agents with unique personalities that simulate how the market reacts. Posts, arguments, opinion shifts — hour by hour.
 
-*A multi-agent swarm intelligence engine that simulates public opinion, market sentiment, and social dynamics. Entirely on your hardware.*
+---
 
-[![GitHub Stars](https://img.shields.io/github/stars/nikmcfly/MiroFish-Offline?style=flat-square&color=DAA520)](https://github.com/nikmcfly/MiroFish-Offline/stargazers)
-[![GitHub Forks](https://img.shields.io/github/forks/nikmcfly/MiroFish-Offline?style=flat-square)](https://github.com/nikmcfly/MiroFish-Offline/network)
-[![Docker](https://img.shields.io/badge/Docker-Build-2496ED?style=flat-square&logo=docker&logoColor=white)](https://hub.docker.com/)
-[![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL--3.0-blue?style=flat-square)](./LICENSE)
+## 🔄 What changed from MiroFish-Offline?
 
-</div>
-
-## What is this?
-
-MiroFish is a multi-agent simulation engine: upload any document (press release, policy draft, financial report), and it generates hundreds of AI agents with unique personalities that simulate the public reaction on social media. Posts, arguments, opinion shifts — hour by hour.
-
-The [original MiroFish](https://github.com/666ghj/MiroFish) was built for the Chinese market (Chinese UI, Zep Cloud for knowledge graphs, DashScope API). This fork makes it **fully local and fully English**:
-
-| Original MiroFish | MiroFish-Offline |
+| MiroFish-Offline | Maya MIRO |
 |---|---|
-| Chinese UI | **English UI** (1,000+ strings translated) |
-| Zep Cloud (graph memory) | **Neo4j Community Edition 5.15** |
-| DashScope / OpenAI API (LLM) | **Ollama** (qwen2.5, llama3, etc.) |
-| Zep Cloud embeddings | **nomic-embed-text** via Ollama |
-| Cloud API keys required | **Zero cloud dependencies** |
+| Ollama (local models) | NVIDIA NIM API |
+| 16GB RAM minimum | ~2GB RAM (Neo4j only) |
+| qwen2.5:32b via Ollama | qwen/qwen3.5-397b-a17b via NVIDIA NIM |
+| nomic-embed-text via Ollama | nvidia/nv-embed-v1 via NVIDIA NIM |
+| No internet required | NVIDIA NIM API key required |
+| Generic use case | Stock sentiment + financial analysis |
 
-## Workflow
+---
 
-1. **Graph Build** — Extracts entities (people, companies, events) and relationships from your document. Builds a knowledge graph with individual and group memory via Neo4j.
-2. **Env Setup** — Generates hundreds of agent personas, each with unique personality, opinion bias, reaction speed, influence level, and memory of past events.
-3. **Simulation** — Agents interact on simulated social platforms: posting, replying, arguing, shifting opinions. The system tracks sentiment evolution, topic propagation, and influence dynamics in real time.
-4. **Report** — A ReportAgent analyzes the post-simulation environment, interviews a focus group of agents, searches the knowledge graph for evidence, and generates a structured analysis.
-5. **Interaction** — Chat with any agent from the simulated world. Ask them why they posted what they posted. Full memory and personality persists.
+## 🎯 Use Case
 
-## Screenshot
+You → upload earnings report or news article  
+↓  
+Maya MIRO → builds knowledge graph (Neo4j)  
+↓  
+Generates 100s of agent personas (bulls, bears, retail, institutional)  
+↓  
+Agents simulate social reactions hour by hour  
+↓  
+ReportAgent generates sentiment analysis  
+↓  
+You → cross check with Zerodha charts → make informed trade decision
 
-<div align="center">
-<img src="./static/image/mirofish-offline-screenshot.jpg" alt="MiroFish Offline — English UI" width="100%"/>
-</div>
+---
 
-## Quick Start
+## ⚙️ How It Works (5 Stages)
+
+1. **Graph Build** — Extracts entities (companies, events, financial signals) from your document. Builds knowledge graph in Neo4j.
+2. **Env Setup** — Generates hundreds of agent personas with unique personality, opinion bias (bullish/bearish), reaction speed, influence level.
+3. **Simulation** — Agents interact on simulated social platforms: posting, replying, arguing, shifting opinions. Tracks sentiment evolution in real time.
+4. **Report** — ReportAgent analyzes post-simulation environment and generates structured sentiment report.
+5. **Interaction** — Chat with any agent from the simulated world. Full memory and personality persists.
+
+---
+
+## 🛠️ Setup (No Ollama needed)
 
 ### Prerequisites
+- Docker Desktop installed
+- NVIDIA NIM API key from https://integrate.api.nvidia.com
 
-- Docker & Docker Compose (recommended), **or**
-- Python 3.11+, Node.js 18+, Neo4j 5.15+, Ollama
-
-### Option A: Docker (easiest)
-
+### Step 1 — Clone
 ```bash
-git clone https://github.com/nikmcfly/MiroFish-Offline.git
-cd MiroFish-Offline
+git clone https://github.com/iakhileshnanda/myMayaMIRO.git
+cd myMayaMIRO
 cp .env.example .env
-
-# Start all services (Neo4j, Ollama, MiroFish)
-docker compose up -d
-
-# Pull the required models into Ollama
-docker exec mirofish-ollama ollama pull qwen2.5:32b
-docker exec mirofish-ollama ollama pull nomic-embed-text
 ```
 
-Open `http://localhost:3000` — that's it.
+### Step 2 — Add your NVIDIA key in .env
+```
+LLM_API_KEY=your_actual_nvidia_nim_key
+EMBEDDING_API_KEY=your_actual_nvidia_nim_key
+```
 
-### Option B: Manual
-
-**1. Start Neo4j**
-
+### Step 3 — Start Neo4j only
 ```bash
 docker run -d --name neo4j \
   -p 7474:7474 -p 7687:7687 \
@@ -80,128 +77,43 @@ docker run -d --name neo4j \
   neo4j:5.15-community
 ```
 
-**2. Start Ollama & pull models**
-
+### Step 4 — Run backend
 ```bash
-ollama serve &
-ollama pull qwen2.5:32b      # LLM (or qwen2.5:14b for less VRAM)
-ollama pull nomic-embed-text  # Embeddings (768d)
-```
-
-**3. Configure & run backend**
-
-```bash
-cp .env.example .env
-# Edit .env if your Neo4j/Ollama are on non-default ports
-
 cd backend
 pip install -r requirements.txt
 python run.py
 ```
 
-**4. Run frontend**
-
+### Step 5 — Run frontend
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
 
-Open `http://localhost:3000`.
+Open http://localhost:3000
 
-## Configuration
+---
 
-All settings are in `.env` (copy from `.env.example`):
+## 💻 Hardware Requirements
 
-```bash
-# LLM — points to local Ollama (OpenAI-compatible API)
-LLM_API_KEY=ollama
-LLM_BASE_URL=http://localhost:11434/v1
-LLM_MODEL_NAME=qwen2.5:32b
-
-# Neo4j
-NEO4J_URI=bolt://localhost:7687
-NEO4J_USER=neo4j
-NEO4J_PASSWORD=mirofish
-
-# Embeddings
-EMBEDDING_MODEL=nomic-embed-text
-EMBEDDING_BASE_URL=http://localhost:11434
-```
-
-Works with any OpenAI-compatible API — swap Ollama for Claude, GPT, or any other provider by changing `LLM_BASE_URL` and `LLM_API_KEY`.
-
-## Architecture
-
-This fork introduces a clean abstraction layer between the application and the graph database:
-
-```
-┌─────────────────────────────────────────┐
-│              Flask API                   │
-│  graph.py  simulation.py  report.py     │
-└──────────────┬──────────────────────────┘
-               │ app.extensions['neo4j_storage']
-┌──────────────▼──────────────────────────┐
-│           Service Layer                  │
-│  EntityReader  GraphToolsService         │
-│  GraphMemoryUpdater  ReportAgent         │
-└──────────────┬──────────────────────────┘
-               │ storage: GraphStorage
-┌──────────────▼──────────────────────────┐
-│         GraphStorage (abstract)          │
-│              │                            │
-│    ┌─────────▼─────────┐                │
-│    │   Neo4jStorage     │                │
-│    │  ┌───────────────┐ │                │
-│    │  │ EmbeddingService│ ← Ollama       │
-│    │  │ NERExtractor   │ ← Ollama LLM   │
-│    │  │ SearchService  │ ← Hybrid search │
-│    │  └───────────────┘ │                │
-│    └───────────────────┘                │
-└─────────────────────────────────────────┘
-               │
-        ┌──────▼──────┐
-        │  Neo4j CE   │
-        │  5.15       │
-        └─────────────┘
-```
-
-**Key design decisions:**
-
-- `GraphStorage` is an abstract interface — swap Neo4j for any other graph DB by implementing one class
-- Dependency injection via Flask `app.extensions` — no global singletons
-- Hybrid search: 0.7 × vector similarity + 0.3 × BM25 keyword search
-- Synchronous NER/RE extraction via local LLM (replaces Zep's async episodes)
-- All original dataclasses and LLM tools (InsightForge, Panorama, Agent Interviews) preserved
-
-## Hardware Requirements
-
-| Component | Minimum | Recommended |
+| Component | Maya MIRO | Original MiroFish-Offline |
 |---|---|---|
-| RAM | 16 GB | 32 GB |
-| VRAM (GPU) | 10 GB (14b model) | 24 GB (32b model) |
-| Disk | 20 GB | 50 GB |
-| CPU | 4 cores | 8+ cores |
+| RAM | ~2GB (Neo4j only) | 16GB minimum |
+| GPU | Not needed | 10GB VRAM minimum |
+| Disk | 5GB | 20GB |
+| Internet | Required (NVIDIA NIM) | Not required |
 
-CPU-only mode works but is significantly slower for LLM inference. For lighter setups, use `qwen2.5:14b` or `qwen2.5:7b`.
+---
 
-## Use Cases
+## 🔑 Get NVIDIA NIM API Key
+1. Go to https://integrate.api.nvidia.com
+2. Sign up / log in
+3. Generate free API key
+4. Paste in .env
 
-- **PR crisis testing** — simulate the public reaction to a press release before publishing
-- **Trading signal generation** — feed financial news and observe simulated market sentiment
-- **Policy impact analysis** — test draft regulations against simulated public response
-- **Creative experiments** — someone fed it a classical Chinese novel with a lost ending; the agents wrote a narratively consistent conclusion
+---
 
-## License
-
-AGPL-3.0 — same as the original MiroFish project. See [LICENSE](./LICENSE).
-
-## Credits & Attribution
-
-This is a modified fork of [MiroFish](https://github.com/666ghj/MiroFish) by [666ghj](https://github.com/666ghj), originally supported by [Shanda Group](https://www.shanda.com/). The simulation engine is powered by [OASIS](https://github.com/camel-ai/oasis) from the CAMEL-AI team.
-
-**Modifications in this fork:**
-- Backend migrated from Zep Cloud to local Neo4j CE 5.15 + Ollama
-- Entire frontend translated from Chinese to English (20 files, 1,000+ strings)
-- All Zep references replaced with Neo4j across the UI
-- Rebranded to MiroFish Offline
+## 📌 Credits
+- Original MiroFish: https://github.com/666ghj/MiroFish
+- MiroFish-Offline fork: https://github.com/nikmcfly/MiroFish-Offline
