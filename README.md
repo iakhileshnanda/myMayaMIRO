@@ -6,7 +6,7 @@
 
 # MiroFish-Offline
 
-**Fully local fork of [MiroFish](https://github.com/666ghj/MiroFish) — no cloud APIs required. English UI.**
+**Fully local fork of [MiroFish](https://github.com/666ghj/MiroFish) — now optimized for NVIDIA NIM stock sentiment analysis. English UI.**
 
 *A multi-agent swarm intelligence engine that simulates public opinion, market sentiment, and social dynamics. Entirely on your hardware.*
 
