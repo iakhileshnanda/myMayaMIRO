@@ -1,6 +1,21 @@
 <template>
   <div class="env-setup-panel">
     <div class="scroll-container">
+      <!-- Error Banner with Retry -->
+      <div v-if="prepareError" class="error-banner">
+        <div class="error-content">
+          <div class="error-icon">!</div>
+          <div class="error-details">
+            <span class="error-title">Preparation Failed</span>
+            <span class="error-message">{{ prepareError }}</span>
+          </div>
+        </div>
+        <button class="retry-btn" :disabled="isRetrying" @click="retryPrepareSimulation">
+          <span v-if="isRetrying" class="loading-spinner-small"></span>
+          {{ isRetrying ? 'Retrying...' : 'Retry' }}
+        </button>
+      </div>
+
       <!-- Step 01: Simulation Instance -->
       <div class="step-card" :class="{ 'active': phase === 0, 'completed': phase > 0 }">
         <div class="card-header">
@@ -662,6 +677,8 @@ const expectedTotal = ref(null)
 const simulationConfig = ref(null)
 const selectedProfile = ref(null)
 const showProfilesDetail = ref(true)
+const prepareError = ref(null) // Track preparation errors for retry
+const isRetrying = ref(false)
 
 // Log deduplication：Record key information from last output
 let lastLoggedMessage = ''
@@ -812,12 +829,61 @@ const startPrepareSimulation = async () => {
       // Start real-time fetching Profiles
       startProfilesPolling()
     } else {
-      addLog(`Preparation failed: ${res.error || 'Unknown error'}`)
+      prepareError.value = res.error || 'Unknown error'
+      addLog(`Preparation failed: ${prepareError.value}`)
       emit('update-status', 'error')
     }
   } catch (err) {
+    prepareError.value = err.message
     addLog(`Preparation exception: ${err.message}`)
     emit('update-status', 'error')
+  } finally {
+    isRetrying.value = false
+  }
+}
+
+// Retry preparation from where it failed
+const retryPrepareSimulation = async () => {
+  prepareError.value = null
+  isRetrying.value = true
+  addLog('Retrying preparation (force regenerate)...')
+
+  try {
+    const res = await prepareSimulation({
+      simulation_id: props.simulationId,
+      use_llm_for_profiles: true,
+      parallel_profile_count: 5,
+      force_regenerate: true
+    })
+
+    if (res.success && res.data) {
+      if (res.data.already_prepared) {
+        addLog('Preparation already completed, loading data...')
+        await loadPreparedData()
+        isRetrying.value = false
+        return
+      }
+
+      taskId.value = res.data.task_id
+      addLog(`Retry task started: ${res.data.task_id}`)
+
+      if (res.data.expected_entities_count) {
+        expectedTotal.value = res.data.expected_entities_count
+      }
+
+      startPolling()
+      startProfilesPolling()
+    } else {
+      prepareError.value = res.error || 'Retry failed'
+      addLog(`Retry failed: ${prepareError.value}`)
+      emit('update-status', 'error')
+    }
+  } catch (err) {
+    prepareError.value = err.message
+    addLog(`Retry exception: ${err.message}`)
+    emit('update-status', 'error')
+  } finally {
+    isRetrying.value = false
   }
 }
 
@@ -895,9 +961,11 @@ const pollPrepareStatus = async () => {
         stopProfilesPolling()
         await loadPreparedData()
       } else if (data.status === 'failed') {
-        addLog(`✗ Preparation failed: ${data.error || 'Unknown error'}`)
+        prepareError.value = data.error || 'Unknown error'
+        addLog(`✗ Preparation failed: ${prepareError.value}`)
         stopPolling()
         stopProfilesPolling()
+        emit('update-status', 'error')
       }
     }
   } catch (err) {
@@ -1096,6 +1164,95 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   gap: 20px;
+}
+
+/* Error Banner */
+.error-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: #FFF5F5;
+  border: 1px solid #FFCDD2;
+  border-radius: 8px;
+  gap: 16px;
+}
+
+.error-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.error-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #D32F2F;
+  color: #FFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.error-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.error-title {
+  font-weight: 700;
+  font-size: 13px;
+  color: #D32F2F;
+}
+
+.error-message {
+  font-size: 12px;
+  color: #666;
+  word-break: break-word;
+}
+
+.retry-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 20px;
+  background: #D32F2F;
+  color: #FFF;
+  border: none;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s;
+}
+
+.retry-btn:hover:not(:disabled) {
+  background: #B71C1C;
+}
+
+.retry-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.loading-spinner-small {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: #FFF;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 /* Step Card */

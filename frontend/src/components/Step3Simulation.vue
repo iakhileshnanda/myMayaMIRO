@@ -91,13 +91,35 @@
       </div>
 
       <div class="action-controls">
-        <button 
+        <!-- Stop Simulation Button (visible while running) -->
+        <button
+          v-if="phase === 1"
+          class="action-btn danger"
+          :disabled="isStopping"
+          @click="handleStopSimulation"
+        >
+          <span v-if="isStopping" class="loading-spinner-small"></span>
+          {{ isStopping ? 'Stopping...' : 'Stop Simulation' }}
+        </button>
+
+        <!-- Restart Simulation Button (visible after stop/complete/fail) -->
+        <button
+          v-if="phase === 2 || startError"
+          class="action-btn secondary"
+          :disabled="isStarting"
+          @click="doStartSimulation"
+        >
+          {{ isStarting ? 'Restarting...' : 'Restart Simulation' }}
+        </button>
+
+        <!-- Generate Report Button -->
+        <button
           class="action-btn primary"
           :disabled="phase !== 2 || isGeneratingReport"
           @click="handleNextStep"
         >
           <span v-if="isGeneratingReport" class="loading-spinner-small"></span>
-          {{ isGeneratingReport ? 'Starting...' : 'Start Generating Report' }} 
+          {{ isGeneratingReport ? 'Starting...' : 'Start Generating Report' }}
           <span v-if="!isGeneratingReport" class="arrow-icon">→</span>
         </button>
       </div>
@@ -933,6 +955,25 @@ onUnmounted(() => {
 
 .action-btn.primary:hover:not(:disabled) {
   background: #333;
+}
+
+.action-btn.danger {
+  background: #D32F2F;
+  color: #FFF;
+}
+
+.action-btn.danger:hover:not(:disabled) {
+  background: #B71C1C;
+}
+
+.action-btn.secondary {
+  background: #FFF;
+  color: #000;
+  border: 1px solid #000;
+}
+
+.action-btn.secondary:hover:not(:disabled) {
+  background: #F5F5F5;
 }
 
 .action-btn:disabled {

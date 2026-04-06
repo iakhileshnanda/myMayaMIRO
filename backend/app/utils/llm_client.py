@@ -7,10 +7,14 @@ Supports Ollama num_ctx parameter to prevent prompt truncation
 import json
 import os
 import re
+import time
+import logging
 from typing import Optional, Dict, Any, List
-from openai import OpenAI
+from openai import OpenAI, RateLimitError, APIStatusError
 
 from ..config import Config
+
+logger = logging.getLogger('mayamiro.llm_client')
 
 
 class LLMClient:
@@ -79,11 +83,41 @@ class LLMClient:
                 "options": {"num_ctx": self._num_ctx}
             }
 
-        response = self.client.chat.completions.create(**kwargs)
-        content = response.choices[0].message.content
+        content = self._call_with_retry(**kwargs)
         # Some models (like MiniMax M2.5) include <think>thinking content in response, need to remove
         content = re.sub(r'<think>[\s\S]*?</think>', '', content).strip()
         return content
+
+    def _call_with_retry(self, max_retries: int = 5, **kwargs) -> str:
+        """
+        Call LLM API with automatic retry on rate limit (429) errors.
+        Uses exponential backoff: 10s, 20s, 40s, 60s, 60s
+        """
+        for attempt in range(max_retries):
+            try:
+                response = self.client.chat.completions.create(**kwargs)
+                return response.choices[0].message.content
+            except RateLimitError as e:
+                wait_time = min(10 * (2 ** attempt), 60)
+                logger.warning(
+                    f"Rate limit hit (attempt {attempt + 1}/{max_retries}), "
+                    f"waiting {wait_time}s before retry..."
+                )
+                if attempt == max_retries - 1:
+                    raise
+                time.sleep(wait_time)
+            except APIStatusError as e:
+                if e.status_code == 429:
+                    wait_time = min(10 * (2 ** attempt), 60)
+                    logger.warning(
+                        f"429 Too Many Requests (attempt {attempt + 1}/{max_retries}), "
+                        f"waiting {wait_time}s before retry..."
+                    )
+                    if attempt == max_retries - 1:
+                        raise
+                    time.sleep(wait_time)
+                else:
+                    raise
 
     def chat_json(
         self,

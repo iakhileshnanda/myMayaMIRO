@@ -49,7 +49,7 @@
       <!-- Right Panel: Step Components -->
       <div class="panel-wrapper right" :style="rightPanelStyle">
         <!-- Step 1: Graph Build -->
-        <Step1GraphBuild 
+        <Step1GraphBuild
           v-if="currentStep === 1"
           :currentPhase="currentPhase"
           :projectData="projectData"
@@ -57,7 +57,9 @@
           :buildProgress="buildProgress"
           :graphData="graphData"
           :systemLogs="systemLogs"
+          :buildError="error"
           @next-step="handleNextStep"
+          @retry-build="retryBuildGraph"
         />
         <!-- Step 2: Env Setup -->
         <Step2EnvSetup
@@ -369,6 +371,27 @@ const loadGraph = async (graphId) => {
     addLog(`Exception loading graph: ${e.message}`)
   } finally {
     graphLoading.value = false
+  }
+}
+
+const retryBuildGraph = async () => {
+  error.value = ''
+  addLog('Retrying graph build (force)...')
+  try {
+    currentPhase.value = 1
+    buildProgress.value = { progress: 0, message: 'Retrying build...' }
+    const res = await buildGraph({ project_id: currentProjectId.value, force: true })
+    if (res.success) {
+      addLog(`Retry task started: ${res.data.task_id}`)
+      startGraphPolling()
+      startPollingTask(res.data.task_id)
+    } else {
+      error.value = res.error
+      addLog(`Retry failed: ${res.error}`)
+    }
+  } catch (err) {
+    error.value = err.message
+    addLog(`Retry exception: ${err.message}`)
   }
 }
 

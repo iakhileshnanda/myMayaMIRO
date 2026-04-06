@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx vite:*)",
+      "Bash(python -c \"from app.utils.llm_client import LLMClient; print\\(''LLM client import OK''\\)\")"
+    ]
+  }
+}

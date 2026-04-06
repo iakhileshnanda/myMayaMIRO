@@ -105,6 +105,20 @@
         </div>
       </div>
 
+      <!-- Error Banner with Retry (Graph Build) -->
+      <div v-if="buildError" class="error-banner">
+        <div class="error-content">
+          <div class="error-icon">!</div>
+          <div class="error-details">
+            <span class="error-title">Graph Build Failed</span>
+            <span class="error-message">{{ buildError }}</span>
+          </div>
+        </div>
+        <button class="retry-btn" @click="$emit('retry-build')">
+          Retry Build
+        </button>
+      </div>
+
       <!-- Step 02: Graph Build -->
       <div class="step-card" :class="{ 'active': currentPhase === 1, 'completed': currentPhase > 1 }">
         <div class="card-header">
@@ -199,10 +213,11 @@ const props = defineProps({
   ontologyProgress: Object,
   buildProgress: Object,
   graphData: Object,
-  systemLogs: { type: Array, default: () => [] }
+  systemLogs: { type: Array, default: () => [] },
+  buildError: { type: String, default: '' }
 })
 
-defineEmits(['next-step'])
+defineEmits(['next-step', 'retry-build'])
 
 const selectedOntologyItem = ref(null)
 const logContent = ref(null)
@@ -287,6 +302,77 @@ watch(() => props.systemLogs.length, () => {
   display: flex;
   flex-direction: column;
   gap: 20px;
+}
+
+/* Error Banner */
+.error-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: #FFF5F5;
+  border: 1px solid #FFCDD2;
+  border-radius: 8px;
+  gap: 16px;
+}
+
+.error-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.error-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #D32F2F;
+  color: #FFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.error-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.error-title {
+  font-weight: 700;
+  font-size: 13px;
+  color: #D32F2F;
+}
+
+.error-message {
+  font-size: 12px;
+  color: #666;
+  word-break: break-word;
+}
+
+.retry-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 20px;
+  background: #D32F2F;
+  color: #FFF;
+  border: none;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s;
+}
+
+.retry-btn:hover {
+  background: #B71C1C;
 }
 
 .step-card {

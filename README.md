@@ -219,11 +219,11 @@ npm install
 npm run dev
 ```
 
-The frontend starts at **http://localhost:5173**.
+The frontend starts at **http://localhost:3000**.
 
 ### Step 6 — Open the App
 
-Navigate to **http://localhost:5173** in your browser. You should see the Maya MIRO interface.
+Navigate to **http://localhost:3000** in your browser. You should see the Maya MIRO interface.
 
 ---
 
@@ -242,12 +242,69 @@ Every `.env` variable explained:
 | `EMBEDDING_MODEL` | Which model converts text to vectors for similarity search. | `nomic-embed-text` | `nvidia/nv-embed-v1` |
 | `EMBEDDING_BASE_URL` | API endpoint for the embedding model. | `http://localhost:11434` | `https://integrate.api.nvidia.com/v1` |
 | `EMBEDDING_API_KEY` | API key for embedding requests. Same as `LLM_API_KEY` for NVIDIA NIM. | *(empty)* | `nvapi-abc123...` |
+| `REPORT_AGENT_MAX_TOOL_CALLS` | Max tool calls per report section. Lower = fewer API calls but less detailed report. | `5` | `3` |
+| `REPORT_AGENT_MAX_REFLECTION_ROUNDS` | Max reflection rounds per report section. Lower = faster but less polished. | `2` | `1` |
+
+---
+
+## Switching LLM Providers (OpenRouter, Groq, Ollama)
+
+Maya MIRO uses the **OpenAI SDK format** for all LLM calls. Any OpenAI-compatible API works — you only need to change 3 variables in `.env`.
+
+### Provider Quick Reference
+
+| Provider | `LLM_API_KEY` | `LLM_BASE_URL` | `LLM_MODEL_NAME` | Notes |
+|----------|--------------|-----------------|-------------------|-------|
+| **NVIDIA NIM** | `nvapi-...` | `https://integrate.api.nvidia.com/v1` | `qwen/qwen3.5-397b-a17b` | Free tier, rate-limited. Best for small tests. |
+| **OpenRouter** | `sk-or-v1-...` | `https://openrouter.ai/api/v1` | `qwen/qwen3-235b-a22b` | Pay-per-token, many models. Best for full runs. |
+| **Groq** | `gsk_...` | `https://api.groq.com/openai/v1` | `llama-3.3-70b-versatile` | Very fast inference, free tier available. |
+| **Ollama** | `ollama` | `http://localhost:11434/v1` | `qwen2.5:32b` | Fully local, needs 16GB+ RAM and GPU. |
+
+### How to Switch
+
+Edit your `.env` file — only these 3 lines change:
+
+```ini
+# Example: Switch to OpenRouter
+LLM_API_KEY=sk-or-v1-your-openrouter-key
+LLM_BASE_URL=https://openrouter.ai/api/v1
+LLM_MODEL_NAME=qwen/qwen3-235b-a22b
+```
+
+```ini
+# Example: Switch to Groq
+LLM_API_KEY=gsk_your-groq-key
+LLM_BASE_URL=https://api.groq.com/openai/v1
+LLM_MODEL_NAME=llama-3.3-70b-versatile
+```
+
+> **Important:** Keep the `EMBEDDING_*` variables pointed at NVIDIA NIM even if you switch the LLM provider. Embeddings are cheap (no rate limit issues) and OpenRouter/Groq don't natively support the embedding models Maya MIRO uses. You can use a different NVIDIA NIM key or the same one — embedding calls are lightweight.
+
+### Why Switch?
+
+The **Report Generation stage (Stage 5)** makes **30–50+ LLM calls** for a single report:
+- 1 call to plan the outline (typically 5–6 sections)
+- Per section: up to 5 tool calls + 3 reflection rounds ≈ 8 LLM calls each
+- The `interview_agents` tool can interview 5–10 agents, each needing its own LLM call
+
+NVIDIA NIM's free tier rate limit often can't handle this burst. Maya MIRO includes **automatic retry with exponential backoff** (waits 10s → 20s → 40s → 60s on 429 errors), but switching to a provider with higher rate limits (OpenRouter, Groq) avoids the slowdown entirely.
+
+### Reducing API Calls (Free Tier Optimization)
+
+If you're staying on a rate-limited free tier, add these to `.env` to reduce report complexity:
+
+```ini
+REPORT_AGENT_MAX_TOOL_CALLS=3
+REPORT_AGENT_MAX_REFLECTION_ROUNDS=1
+```
+
+This cuts report API calls roughly in half, at the cost of slightly less detailed reports.
 
 ---
 
 ## How to Run Your First Simulation
 
-Once the app is running at **http://localhost:5173**, follow these steps:
+Once the app is running at **http://localhost:3000**, follow these steps:
 
 ### 1. Upload a Reality Seed
 
