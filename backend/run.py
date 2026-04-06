@@ -1,5 +1,5 @@
 """
-MiroFish Backend Entry Point
+Maya MIRO Backend Entry Point
 """
 
 import os

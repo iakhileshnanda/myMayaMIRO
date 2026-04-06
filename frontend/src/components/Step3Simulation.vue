@@ -266,6 +266,16 @@
           <div class="pulse-ring"></div>
           <span>Waiting for agent actions...</span>
         </div>
+
+        <!-- Processing indicator: shows when simulation is running between rounds -->
+        <div v-if="phase === 1 && allActions.length > 0" class="round-processing-indicator">
+          <div class="processing-pulse"></div>
+          <div class="processing-text">
+            <span class="processing-label">Agents are thinking...</span>
+            <span class="processing-detail">Round {{ currentMaxRound + 1 }}/{{ runStatus.total_rounds || maxRounds || '?' }} in progress — each agent is consulting the LLM</span>
+            <span class="processing-eta" v-if="estimatedTimeRemaining">{{ estimatedTimeRemaining }}</span>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -355,6 +365,38 @@ const twitterElapsedTime = computed(() => {
 // Simulated elapsed time for Reddit platform
 const redditElapsedTime = computed(() => {
   return formatElapsedTime(runStatus.value.reddit_current_round || 0)
+})
+
+// Track round timestamps to estimate time remaining
+const roundTimestamps = ref([])
+const currentMaxRound = computed(() => {
+  return Math.max(runStatus.value.twitter_current_round || 0, runStatus.value.reddit_current_round || 0)
+})
+
+// Watch round changes to record timestamps
+watch(currentMaxRound, (newRound, oldRound) => {
+  if (newRound > oldRound) {
+    roundTimestamps.value.push({ round: newRound, time: Date.now() })
+  }
+})
+
+const estimatedTimeRemaining = computed(() => {
+  const totalRounds = runStatus.value.total_rounds || props.maxRounds
+  const currentRound = currentMaxRound.value
+  if (!totalRounds || currentRound < 2 || roundTimestamps.value.length < 2) return null
+
+  const stamps = roundTimestamps.value
+  const recent = stamps.slice(-5) // Use last 5 rounds for average
+  if (recent.length < 2) return null
+
+  const avgMs = (recent[recent.length - 1].time - recent[0].time) / (recent.length - 1)
+  const remainingRounds = totalRounds - currentRound
+  const remainingMs = avgMs * remainingRounds
+  const remainingMin = Math.ceil(remainingMs / 60000)
+
+  if (remainingMin < 1) return 'Almost done!'
+  if (remainingMin === 1) return 'Estimated ~1 minute remaining'
+  return `Estimated ~${remainingMin} minutes remaining`
 })
 
 // Methods
@@ -1160,6 +1202,64 @@ onUnmounted(() => {
   justify-content: flex-end;
   font-size: 10px;
   color: #BBB;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Round Processing Indicator */
+.round-processing-indicator {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 20px;
+  margin: 12px 16px;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  border: 1px solid #2a2a4a;
+  border-radius: 10px;
+  animation: indicator-glow 3s ease-in-out infinite;
+}
+
+@keyframes indicator-glow {
+  0%, 100% { border-color: #2a2a4a; box-shadow: 0 0 0 rgba(99, 102, 241, 0); }
+  50% { border-color: #4f46e5; box-shadow: 0 0 20px rgba(99, 102, 241, 0.15); }
+}
+
+.processing-pulse {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #6366f1;
+  flex-shrink: 0;
+  animation: pulse-dot 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.7); }
+}
+
+.processing-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.processing-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #e0e0ff;
+  letter-spacing: 0.02em;
+}
+
+.processing-detail {
+  font-size: 11px;
+  color: #8888aa;
+  line-height: 1.4;
+}
+
+.processing-eta {
+  font-size: 11px;
+  color: #6366f1;
+  font-weight: 500;
   font-family: 'JetBrains Mono', monospace;
 }
 

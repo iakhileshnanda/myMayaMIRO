@@ -2,7 +2,7 @@
   <div class="home-container">
     <!-- Top Navigation Bar -->
     <nav class="navbar" :style="s.navbar">
-      <div class="nav-brand" :style="s.navBrand">MIROFISH OFFLINE</div>
+      <div class="nav-brand" :style="s.navBrand">MAYA MIRO</div>
       <div class="nav-links" :style="s.navLinks">
         <a
           href="https://github.com/iakhileshnanda/myMayaMIRO"
@@ -38,7 +38,7 @@
           <div class="hero-desc" :style="s.heroDesc">
             <p :style="s.heroDescP">
               From a single document,
-              <span :style="s.highlightBold">MiroFish Offline</span> extracts
+              <span :style="s.highlightBold">Maya MIRO</span> extracts
               reality seeds and builds a parallel world of
               <span :style="s.highlightOrange">autonomous AI agents</span> —
               running entirely on your machine. Inject variables, observe
@@ -59,7 +59,7 @@
           <div class="logo-container" :style="s.logoContainer">
             <img
               src="../assets/logo/MiroFish_logo_left.jpeg"
-              alt="MiroFish Logo"
+              alt="Maya MIRO Logo"
               :style="s.heroLogo"
             />
           </div>

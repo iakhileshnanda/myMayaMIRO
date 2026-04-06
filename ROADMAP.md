@@ -1,4 +1,4 @@
-# MiroFish-Offline Roadmap
+# Maya MIRO Roadmap
 
 ## Current State (v0.2.0)
 
@@ -57,7 +57,7 @@ Fully local fork running on Neo4j CE + Ollama. All Zep Cloud dependencies remove
 - [ ] Helm chart for Kubernetes deployment
 
 ### Beyond v1.0
-- [ ] Federation: connect multiple MiroFish instances to share entity knowledge
+- [ ] Federation: connect multiple Maya MIRO instances to share entity knowledge
 - [ ] Fine-tuned local models specifically trained for NER/RE on social simulation data
 - [ ] Voice-driven interaction: talk to simulation agents via local Whisper + TTS
 - [ ] Mobile companion app for monitoring running simulations
